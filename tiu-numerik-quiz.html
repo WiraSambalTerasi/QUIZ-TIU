@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Latihan TIU Numerik</title>
+<style>
+:root{
+  --bg:#F6F3EC; --surface:#FFFFFF; --ink:#1C2333; --muted:#6B7280;
+  --line:#E3DED2; --accent:#C4622D; --accent-ink:#FFFFFF;
+  --ok:#2F7A4F; --bad:#B23B3B; --easy:#2F7A4F; --med:#B8862B; --hard:#B23B3B;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#171A21; --surface:#20242E; --ink:#EDEBE4; --muted:#9CA3AF;
+    --line:#323847; --accent:#E08748; --accent-ink:#1A1A1A;
+    --ok:#4CAF6D; --bad:#E36767; --easy:#4CAF6D; --med:#E0AA4C; --hard:#E36767;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171A21; --surface:#20242E; --ink:#EDEBE4; --muted:#9CA3AF;
+  --line:#323847; --accent:#E08748; --accent-ink:#1A1A1A;
+  --ok:#4CAF6D; --bad:#E36767; --easy:#4CAF6D; --med:#E0AA4C; --hard:#E36767;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  display:flex; justify-content:center;
+}
+.wrap{width:100%; max-width:640px; padding:28px 20px 60px;}
+h1{font-size:1.5rem; letter-spacing:-.01em; margin:0 0 4px;}
+.sub{color:var(--muted); margin:0 0 28px; font-size:.95rem;}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:22px;}
+.mode-row{display:flex; gap:10px; margin-bottom:18px;}
+.mode-btn{flex:1; padding:14px 10px; border-radius:10px; border:1.5px solid var(--line);
+  background:transparent; color:var(--ink); font-size:.92rem; cursor:pointer; text-align:left;}
+.mode-btn strong{display:block; font-size:1rem; margin-bottom:2px;}
+.mode-btn.active{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent);}
+.primary{width:100%; padding:14px; border:none; border-radius:10px; background:var(--accent);
+  color:var(--accent-ink); font-size:1rem; font-weight:600; cursor:pointer; margin-top:6px;}
+.primary:active{opacity:.85;}
+.ghost{background:transparent; border:1.5px solid var(--line); color:var(--ink);}
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px;}
+.progress{font-size:.85rem; color:var(--muted);}
+.badge{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.03em;
+  padding:3px 9px; border-radius:999px; color:#fff;}
+.badge.easy{background:var(--easy);} .badge.medium{background:var(--med); color:#1a1a1a;} .badge.hard{background:var(--hard);}
+.timer{font-variant-numeric:tabular-nums; font-size:1.1rem; font-weight:700;
+  padding:4px 12px; border-radius:8px; background:var(--bg); border:1px solid var(--line);}
+.timer.low{color:var(--bad); border-color:var(--bad);}
+.qtext{font-size:1.08rem; line-height:1.55; margin:6px 0 22px; white-space:pre-wrap;}
+.opt{display:block; width:100%; text-align:left; padding:14px 16px; margin-bottom:10px;
+  border-radius:10px; border:1.5px solid var(--line); background:transparent; color:var(--ink);
+  font-size:.98rem; cursor:pointer; line-height:1.4;}
+.opt b{margin-right:8px; color:var(--muted);}
+.opt.selected{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent);}
+.opt.correct{border-color:var(--ok); background:color-mix(in srgb, var(--ok) 15%, transparent);}
+.opt.wrong{border-color:var(--bad); background:color-mix(in srgb, var(--bad) 15%, transparent);}
+.nav-row{display:flex; gap:10px; margin-top:18px;}
+.nav-row .primary{margin-top:0;}
+.hidden{display:none !important;}
+.score-big{font-size:2.6rem; font-weight:700; margin:0;}
+.score-sub{color:var(--muted); margin:2px 0 20px;}
+.review-item{border-top:1px solid var(--line); padding:16px 0;}
+.review-item:first-child{border-top:none;}
+.review-q{font-size:.95rem; margin-bottom:8px; white-space:pre-wrap;}
+.review-tag{font-size:.82rem; font-weight:700; margin-bottom:6px;}
+.review-tag.ok{color:var(--ok);} .review-tag.bad{color:var(--bad);}
+.exp{font-size:.88rem; color:var(--muted); margin-top:6px; line-height:1.5;}
+footer{text-align:center; color:var(--muted); font-size:.78rem; margin-top:24px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Latihan TIU Numerik</h1>
+  <p class="sub">14 soal — pilih mode pengerjaan di bawah ini</p>
+
+  <div id="start" class="card">
+    <div class="mode-row">
+      <button class="mode-btn active" id="modeTimed">
+        <strong>Dengan Timer</strong>
+        Mudah 1 mnt · Sedang 3 mnt · Sulit 5 mnt
+      </button>
+      <button class="mode-btn" id="modePractice">
+        <strong>Latihan Bebas</strong>
+        Tanpa batas waktu
+      </button>
+    </div>
+    <button class="primary" id="btnStart">Mulai Latihan</button>
+  </div>
+
+  <div id="quiz" class="card hidden">
+    <div class="topbar">
+      <span class="progress" id="progress"></span>
+      <span id="timerBox" class="timer">01:00</span>
+    </div>
+    <span class="badge" id="diffBadge"></span>
+    <p class="qtext" id="qtext"></p>
+    <div id="opts"></div>
+    <div class="nav-row">
+      <button class="primary ghost" id="btnQuit">Keluar</button>
+      <button class="primary" id="btnNext">Lanjut</button>
+    </div>
+  </div>
+
+  <div id="result" class="card hidden">
+    <p class="score-big" id="scoreBig"></p>
+    <p class="score-sub" id="scoreSub"></p>
+    <button class="primary" id="btnRetry">Ulangi Latihan</button>
+    <div id="reviewList"></div>
+  </div>
+
+  <footer>Latihan mandiri — bukan sesi ujian resmi.</footer>
+</div>
+
+<script>
+const QUESTIONS = [
+ {no:37, diff:'easy', q:'1/5 ÷ 5 + 1/4 × 8 − 0,04 = ….', opts:['1','2','3','4','5'], ans:1,
+  exp:'(1/5 ÷ 5) = 0,04. (1/4 × 8) = 2. Maka 0,04 + 2 − 0,04 = 2.'},
+ {no:34, diff:'easy', q:'Manakah nilai berikut yang terbesar?\nA. 6% dari 8   B. 24% dari 2   C. 9% dari 6   D. 3% dari 14   E. 7% dari 7', opts:['6% dari 8 (=0,48)','24% dari 2 (=0,48)','9% dari 6 (=0,54)','3% dari 14 (=0,42)','7% dari 7 (=0,49)'], ans:2,
+  exp:'Kalikan langsung angka pada tiap opsi (abaikan %): 6×8=48, 24×2=48, 9×6=54, 3×14=42, 7×7=49. Hasil terbesar: 9×6=54.'},
+ {no:48, diff:'easy', q:'37, 41, 46, 52, 59, 67, ….', opts:['72','73','74','75','76'], ans:4,
+  exp:'Selisih antar suku naik 1 tiap langkah: 4,5,6,7,8. Selisih berikutnya = 9, maka 67+9 = 76.'},
+ {no:42, diff:'easy', q:'Jika 8 orang pekerja dapat menyelesaikan sebuah pekerjaan dalam 3 jam, berapa lamakah pekerjaan tersebut dapat diselesaikan oleh 3 orang pekerja?', opts:['4 jam','6 jam','8 jam','9 3/5 jam','10 5/6 jam'], ans:2,
+  exp:'Total kerja = 8×3 = 24 orang-jam. Untuk 3 orang: 24÷3 = 8 jam.'},
+ {no:45, diff:'easy', q:'Untuk membuat satu kue brownis, Ikul memerlukan setengah kilogram tepung dan tiga ratus gram margarin. Jika Ikul mempunyai dua ribu gram margarin dan tiga setengah kilogram tepung, maka banyak maksimal kue brownis yang bisa dibuat adalah ….', opts:['5 kue','6 kue','7 kue','8 kue','9 kue'], ans:1,
+  exp:'Tepung: 3500÷500=7 kue. Margarin: 2000÷300=6,67→6 kue. Faktor pembatas = margarin, jadi maksimal 6 kue.'},
+ {no:43, diff:'medium', q:'Ana dan Ani ditugaskan membuat kerajinan tangan. Ana butuh 20 menit, Ani butuh 30 menit. Berapa waktu jika dikerjakan bersama-sama?', opts:['5 menit','6 menit','12 menit','15 menit','10 menit'], ans:2,
+  exp:'Rumus kerja gabungan: (a×b)/(a+b) = (20×30)/50 = 12 menit.'},
+ {no:39, diff:'medium', q:'A = 1/6 × 20\nB = 12 2/4% × 20\nHubungan A dan B yang benar adalah ….', opts:['A = B','A < B','A > B','A = 2B','2A = B'], ans:2,
+  exp:'A = 20/6 ≈ 3,33. B = 12,5% × 20 = 2,5. Karena 3,33 > 2,5 maka A > B.'},
+ {no:41, diff:'medium', q:'Jika x = 17 + 13 dan y = 16 × 2, maka hubungan x dan y yang benar adalah ….', opts:['1/3 x = 1/2 y','1/5 x > 1/4 y','1/3 x < 1/4 y','1/6 x < 1/4 y','1/5 x > 1/4 y'], ans:3,
+  exp:'x=30, y=32. Cek opsi D: 1/6×30=5 dan 1/4×32=8 → 5<8 benar.'},
+ {no:36, diff:'medium', q:'4 × 1/3 − 5/6 + 1/9 ÷ 1/6 = ….', opts:['2 1/6','5/6','1/6','1 2/6','1 1/6'], ans:4,
+  exp:'4×1/3=4/3. 1/9÷1/6=6/9=2/3. Samakan penyebut 6: 8/6−5/6+4/6=7/6=1 1/6.'},
+ {no:35, diff:'medium', q:'1/5 × 1 7/8 + 1/4 ÷ 1 2/3 = ….', opts:['9/20','11/20','18/40','21/40','25/40'], ans:3,
+  exp:'1/5×15/8=3/8. 1/4÷5/3=1/4×3/5=3/20. Samakan penyebut 40: 15/40+6/40=21/40.'},
+ {no:40, diff:'hard', q:'Sebuah tangki berkapasitas 560 liter diisi pompa dengan laju 4 liter/menit.\nX = waktu mengisi tangki sampai penuh\nY = 2 jam 15 menit\nManakah hubungan yang benar antara X dan Y?', opts:['2X < Y','2X = Y','X = 2Y','X < Y','X > Y'], ans:4,
+  exp:'X = 560÷4 = 140 menit (2 jam 20 menit). Y = 135 menit. Karena 140 > 135, maka X > Y.'},
+ {no:38, diff:'hard', q:'P = 15/6 − 2×9/4 + 6\nQ = 45÷9/8 − 5/4×28\nHubungan P dan Q yang benar adalah ….', opts:['3P < 2Q','4P < 3Q','2P < 4Q','3P > 5Q','2P > 3Q'], ans:2,
+  exp:'P = 2,5−4,5+6 = 4. Q = 40−35 = 5. Cek opsi C: 2P=8, 4Q=20 → 8<20 benar.'},
+ {no:46, diff:'hard', q:'4, 2, 2/3, 1/3, …, ….', opts:['1/4, 2/4','1/6, 1/9','1/5, 1/9','1/9, 1/18','1/9, 1/12'], ans:3,
+  exp:'Pola bergantian ÷2, ÷3, ÷2, ÷3…: 1/3÷3=1/9, lalu 1/9÷2=1/18.'},
+ {no:44, diff:'hard', q:'Untuk membangun sebuah gedung diperlukan 45 pekerja dalam waktu 90 hari. Setelah 40 hari pengerjaan, cuaca memburuk sehingga proyek berhenti 14 hari. Agar selesai tepat waktu, berapa minimal pekerja yang harus ditambah?', opts:['63 orang','54 orang','36 orang','18 orang','10 orang'], ans:3,
+  exp:'Total kerja=45×90=4050 orang-hari. Sudah selesai=45×40=1800. Sisa=2250 orang-hari. Sisa waktu=(90−40)−14=36 hari. Butuh=2250÷36=62,5→63 orang. Tambahan=63−45=18 orang.'}
+];
+const TIME = {easy:60, medium:180, hard:300};
+const DIFF_LABEL = {easy:'Mudah', medium:'Sedang', hard:'Sulit'};
+
+let mode = 'timed';
+let idx = 0, score = 0, timerId = null, timeLeft = 0;
+let answers = new Array(QUESTIONS.length).fill(null);
+
+const els = {
+  start: document.getElementById('start'), quiz: document.getElementById('quiz'), result: document.getElementById('result'),
+  modeTimed: document.getElementById('modeTimed'), modePractice: document.getElementById('modePractice'),
+  btnStart: document.getElementById('btnStart'), progress: document.getElementById('progress'),
+  timerBox: document.getElementById('timerBox'), diffBadge: document.getElementById('diffBadge'),
+  qtext: document.getElementById('qtext'), opts: document.getElementById('opts'),
+  btnNext: document.getElementById('btnNext'), btnQuit: document.getElementById('btnQuit'),
+  scoreBig: document.getElementById('scoreBig'), scoreSub: document.getElementById('scoreSub'),
+  btnRetry: document.getElementById('btnRetry'), reviewList: document.getElementById('reviewList')
+};
+
+els.modeTimed.onclick = () => setMode('timed');
+els.modePractice.onclick = () => setMode('practice');
+function setMode(m){
+  mode = m;
+  els.modeTimed.classList.toggle('active', m==='timed');
+  els.modePractice.classList.toggle('active', m==='practice');
+}
+
+els.btnStart.onclick = () => { idx=0; score=0; answers.fill(null); els.start.classList.add('hidden'); showQuestion(); };
+els.btnRetry.onclick = () => { els.result.classList.add('hidden'); els.start.classList.remove('hidden'); };
+els.btnQuit.onclick = () => { clearInterval(timerId); els.quiz.classList.add('hidden'); els.start.classList.remove('hidden'); };
+
+function showQuestion(){
+  clearInterval(timerId);
+  els.quiz.classList.remove('hidden'); els.result.classList.add('hidden');
+  const q = QUESTIONS[idx];
+  els.progress.textContent = 'Soal ' + (idx+1) + ' dari ' + QUESTIONS.length;
+  els.diffBadge.textContent = DIFF_LABEL[q.diff];
+  els.diffBadge.className = 'badge ' + q.diff;
+  els.qtext.textContent = q.q;
+  els.opts.innerHTML = '';
+  const letters = ['A','B','C','D','E'];
+  q.opts.forEach((opt, i) => {
+    const b = document.createElement('button');
+    b.className = 'opt'; b.innerHTML = '<b>'+letters[i]+'.</b>' + opt;
+    b.onclick = () => selectOpt(i);
+    els.opts.appendChild(b);
+  });
+  updateSelectedUI();
+  els.btnNext.textContent = idx === QUESTIONS.length-1 ? 'Selesai' : 'Lanjut';
+
+  if(mode === 'timed'){
+    els.timerBox.classList.remove('hidden');
+    timeLeft = TIME[q.diff];
+    tickTimer();
+    timerId = setInterval(tickTimer, 1000);
+  } else {
+    els.timerBox.classList.add('hidden');
+  }
+}
+function tickTimer(){
+  const m = String(Math.floor(timeLeft/60)).padStart(2,'0');
+  const s = String(timeLeft%60).padStart(2,'0');
+  els.timerBox.textContent = m+':'+s;
+  els.timerBox.classList.toggle('low', timeLeft <= 10);
+  if(timeLeft <= 0){ clearInterval(timerId); goNext(); return; }
+  timeLeft--;
+}
+function selectOpt(i){ answers[idx] = i; updateSelectedUI(); }
+function updateSelectedUI(){
+  [...els.opts.children].forEach((b,i)=> b.classList.toggle('selected', answers[idx]===i));
+}
+els.btnNext.onclick = goNext;
+function goNext(){
+  clearInterval(timerId);
+  if(idx < QUESTIONS.length-1){ idx++; showQuestion(); } else { finish(); }
+}
+function finish(){
+  score = 0;
+  QUESTIONS.forEach((q,i) => { if(answers[i] === q.ans) score++; });
+  els.quiz.classList.add('hidden'); els.result.classList.remove('hidden');
+  els.scoreBig.textContent = score + ' / ' + QUESTIONS.length;
+  els.scoreSub.textContent = 'Jawaban benar — ' + Math.round(score/QUESTIONS.length*100) + '% dari total soal';
+  const letters = ['A','B','C','D','E'];
+  els.reviewList.innerHTML = '';
+  QUESTIONS.forEach((q,i) => {
+    const div = document.createElement('div'); div.className = 'review-item';
+    const ok = answers[i] === q.ans;
+    const userAns = answers[i] === null ? 'Tidak dijawab' : letters[answers[i]] + '. ' + q.opts[answers[i]];
+    div.innerHTML =
+      '<div class="review-tag '+(ok?'ok':'bad')+'">Soal No '+q.no+' — '+(ok?'Benar':'Salah')+'</div>' +
+      '<div class="review-q">'+q.q+'</div>' +
+      '<div>Jawabanmu: '+userAns+'</div>' +
+      '<div>Kunci: '+letters[q.ans]+'. '+q.opts[q.ans]+'</div>' +
+      '<div class="exp">'+q.exp+'</div>';
+    els.reviewList.appendChild(div);
+  });
+}
+</script>
+</body>
+</html>
